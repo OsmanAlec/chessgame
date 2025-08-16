@@ -4,8 +4,8 @@ class Board:
     def __init__(self):
         """Initializes an 8x8 chessboard with all pieces in their starting positions."""
         self.spaces = self._create_initial_board()
-        self.turn = Colour.WHITE
         self.captured = []
+        self.turn = Colour.WHITE
 
     def _create_initial_board(self):
         """
@@ -105,15 +105,6 @@ class Board:
             current_pos_y += y_step
             
         return True
-
-    def isSquareEmpty(self, coordinate: tuple) -> bool:
-        """
-        A function that checks if a given coordinate has no pieces on it.
-        """
-        x,y = coordinate
-        if not self.spaces[x][y]:
-            return True
-        return False
     
     def getPieceAt(self, position: tuple):
         x, y = position
@@ -156,25 +147,3 @@ class Board:
         else:
             print("Invalid move.\n")
             return False
-
-
-
-board = Board()
-board.printWithNotation()
-
-usr_input = input("Try moving")
-
-start, end = usr_input.split(" ")
-
-start_col = ord(start[0]) - ord('a')
-end_col = ord(end[0]) - ord('a')
-
-start_row = 8 - int(start[1])
-end_row = 8 - int(end[1])
-
-start_pos = (start_row, start_col)
-end_pos = (end_row, end_col)
-
-board.movePiece(start_pos, end_pos)
-
-board.printWithNotation()
