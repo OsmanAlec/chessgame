@@ -127,6 +127,15 @@ class Board:
                         return True
         return False
 
+    def squareAttackedByOpponent(self, position, colour):
+        for row in self.spaces:
+            for piece in row:
+                if piece and piece.colour != colour:
+                    if position in piece.getPossibleMoves(self):
+                        return True
+        return False
+
+
     def getLegalMoves(self, piece):
         legal_moves = []
         for move in piece.getPossibleMoves(self):

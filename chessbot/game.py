@@ -43,7 +43,7 @@ class GameManager(object):
             end_row = 8 - int(end[1])
 
         except ValueError as e:
-            print("Check your input. Correct format is start and end squares.\nFor example to move white's pawn write: d2 d5.")
+            print("Check your input. Correct format is start and end squares.\nFor example to move white's pawn write: d2 d4.")
             return self.getInput()
 
         start_pos = (start_row, start_col)

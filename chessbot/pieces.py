@@ -89,6 +89,8 @@ class Knight(Piece):
     def __init__(self, colour, position):
         super().__init__(colour, position)
         self.symbol = 'N' if colour == Colour.WHITE else 'n'
+        self.has_moved = False
+
 
     def getPossibleMoves(self, board):
       
@@ -166,6 +168,8 @@ class King(Piece):
     def __init__(self, colour, position):
         super().__init__(colour, position)
         self.symbol = 'K' if colour == Colour.WHITE else 'k'
+        self.has_moved = False
+
 
     def getPossibleMoves(self, board):
         moves = []
@@ -181,6 +185,16 @@ class King(Piece):
                 if target is None or target.colour != self.colour:
                     moves.append((nx, ny))
 
-        # TODO: castling
+        if not self.hasMoved:
+            for ry in [0, 7]:  # rook files
+                rook = board.getPieceAt((x, ry))
+                if isinstance(rook, Rook) and not rook.hasMoved:
+                    if board.isPathClear(self.position, (x, ry)):
+                        step = -1 if ry == 0 else 1
+                        path = [(x, y), (x, y + step), (x, y + 2*step)]
+                        # king must not be in check at current, intermediate, final squares
+                        if all(not board.squareAttackedByOpponent(pos, self.colour) for pos in path):
+                            moves.append((x, y + 2*step))
+
 
         return moves
