@@ -1,4 +1,5 @@
 from pieces import Colour, Piece, Pawn, Rook, Knight, Bishop, Queen, King 
+from copy import deepcopy
 
 class Board:
     def __init__(self):
@@ -110,40 +111,69 @@ class Board:
         x, y = position
         return self.spaces[x][y]
     
-    def movePiece(self, start_pos, end_pos):
+    def isKingInCheck(self, colour)-> bool:
+        king_pos = None
+        for row in self.spaces:
+            for piece in row:
+                if piece and isinstance(piece, King) and piece.colour == colour:
+                    king_pos = piece.position
+                    break
+
+        # Check all opponent moves
+        for row in self.spaces:
+            for piece in row:
+                if piece and piece.colour != colour:
+                    if king_pos in piece.getPossibleMoves(self):
+                        return True
+        return False
+
+    def getLegalMoves(self, piece):
+        legal_moves = []
+        for move in piece.getPossibleMoves(self):
+            clone = deepcopy(self)  # simulate
+            clone.movePiece(piece.position, move, switch_turn=False)
+            if not clone.isKingInCheck(piece.colour):
+                legal_moves.append(move)
+        return legal_moves
+
+    def movePiece(self, start_pos, end_pos, switch_turn: bool = True) -> bool:
         """
         Attempts to move a piece from start_pos to end_pos.
         Returns True on a successful move, False otherwise.
         """
         piece_to_move = self.getPieceAt(start_pos)
 
-        # Check if there's a piece to move
         if not piece_to_move:
-            print("No piece at the starting position.\n")
+            if switch_turn:
+                print("No piece at the starting position.\n")
             return False
-            
+
         # Check if it's the correct turn
-        if piece_to_move.colour != self.turn:
+        if piece_to_move.colour != self.turn and switch_turn:
             print("Selected opponent's piece.\n")
             return False
 
-        # Check if the move is valid
-        if piece_to_move.isValidMove(end_pos, self):
-            # Handle captures
-            captured_piece = self.getPieceAt(end_pos)
-            if captured_piece:
-                self.captured.append(captured_piece)
-                print(f"Captured {str(captured_piece)}!")
+        # Get legal moves (only if we’re making a real move)
+        if switch_turn:
+            legal_moves = self.getLegalMoves(piece_to_move)
+            if end_pos not in legal_moves:
+                print("Invalid move.\n")
+                return False
 
-            # Perform the move
-            self.spaces[start_pos[0]][start_pos[1]] = None
-            self.spaces[end_pos[0]][end_pos[1]] = piece_to_move
-            piece_to_move.position = end_pos
-            
-            # Switch turns
+        # Handle captures
+        captured_piece = self.getPieceAt(end_pos)
+        if captured_piece and switch_turn:
+            self.captured.append(captured_piece)
+            print(f"Captured {str(captured_piece)}!")
+
+        # Perform the move
+        self.spaces[start_pos[0]][start_pos[1]] = None
+        self.spaces[end_pos[0]][end_pos[1]] = piece_to_move
+        piece_to_move.position = end_pos
+
+        # Switch turns
+        if switch_turn:
             self.turn = Colour.BLACK if self.turn == Colour.WHITE else Colour.WHITE
-            
-            return True
-        else:
-            print("Invalid move.\n")
-            return False
+
+        return True
+

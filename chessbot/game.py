@@ -15,24 +15,36 @@ class GameManager(object):
             self.board.printWithNotation()
             print(f"{self.board.turn}'s turn.")
             start_pos, end_pos = self.getInput()
-            self.board.movePiece(start_pos, end_pos)
+            self.board.movePiece(start_pos, end_pos, True)
 
     def isCheckMate(self):
-        return False
+        colour = self.board.turn
+        if not self.board.isKingInCheck(colour):
+            return False
+        
+        # If king is in check, see if ANY legal move exists
+        for row in self.board.spaces:
+            for piece in row:
+                if piece and piece.colour == colour:
+                    if self.board.getLegalMoves(piece):
+                        return False
+        return True  # in check, and no moves
+
 
     def getInput(self):
         usr_input = input()
         try:
             start, end = usr_input.split(" ")
+        
+            start_col = ord(start[0]) - ord('a')
+            end_col = ord(end[0]) - ord('a')
+
+            start_row = 8 - int(start[1])
+            end_row = 8 - int(end[1])
+
         except ValueError as e:
-            print("Check your input. Correct format is start and end squares. Use usual chess notation as you see it.")
+            print("Check your input. Correct format is start and end squares.\nFor example to move white's pawn write: d2 d5.")
             return self.getInput()
-
-        start_col = ord(start[0]) - ord('a')
-        end_col = ord(end[0]) - ord('a')
-
-        start_row = 8 - int(start[1])
-        end_row = 8 - int(end[1])
 
         start_pos = (start_row, start_col)
         end_pos = (end_row, end_col)

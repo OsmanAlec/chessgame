@@ -14,27 +14,13 @@ class Piece(object):
         self.position: tuple = position # (row, col)
         self.symbol = ' '
 
-    def isValidMove(self, new_position, board):
+    def getPossibleMoves(self, board):
         """
         This method will be implemented by each specific piece class.
-        It should return True if the move is valid, False otherwise.
+        It should return True if the move a list of moves.
         """
-        # universal checks
-        if self.position == new_position:
-            print("Cannot move in place.")
-            return False
-        
-        target_piece = board.getPieceAt(new_position)
-        if target_piece and target_piece.colour == self.colour:
-            print("Cannot land on your own piece.")
-            return False
-        
-        return self._isValidSpecific(new_position, board)
-
-    def _isValidSpecific(self, new_position, board):
-        """To be implemented by each subclass."""
         raise NotImplementedError
-    
+            
     def __str__(self):
         return self.symbol
 
@@ -44,35 +30,32 @@ class Pawn(Piece):
         super().__init__(colour, position)
         self.symbol = 'P' if colour == Colour.WHITE else 'p'
 
-    def _isValidSpecific(self, new_position, board):
+    def getPossibleMoves(self, board):
+        moves = []
         
-        start_row, start_col = self.position
-        end_row, end_col = new_position
+        x,y = self.position
         
-        # Pawns cannot move backward or in place
         direction = -1 if self.colour == Colour.WHITE else 1
-        if (end_row - start_row) * direction < 0:
-            print("Wrong Direction")
-            return False
+        start_row = 6 if self.colour == Colour.WHITE else 1
+
+        if board.getPieceAt((x + direction, y)) is None:
+            moves.append((x + direction, y))
             
-        # Forward Movement
-        if start_col == end_col:
-            # Single move forward
-            if end_row == start_row + direction and not board.getPieceAt(new_position):
-                return True
+            # 2-step forward
+            if x == start_row and board.getPieceAt((x + 2*direction, y)) is None:
+                moves.append((x + 2*direction, y))
             
-            # Double move forward
-            start_rank = 6 if self.colour == Colour.WHITE else 1
-            if start_row == start_rank and end_row == start_row + 2 * direction and board.isPathClear(self.position, new_position):
-                return True
+        # Diagonal captures
+        for dy in [-1, 1]:
+            new_x, new_y = x + direction, y + dy
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                target = board.getPieceAt((new_x, new_y))
+                if target and target.colour != self.colour:
+                    moves.append((new_x, new_y))
                 
-        # Captures
-        if abs(end_col - start_col) == 1 and end_row == start_row + direction:
-            target_piece = board.getPieceAt(new_position)
-            if target_piece and target_piece.colour != self.colour:
-                return True
-                
-        return False
+        # TODO: Implement en passant here
+
+        return moves
 
 
 class Rook(Piece):
@@ -81,14 +64,24 @@ class Rook(Piece):
         super().__init__(colour, position)
         self.symbol = 'R' if colour == Colour.WHITE else 'r'
 
-    def _isValidSpecific(self, new_position, board):
-        start_row, start_col = self.position
-        end_row, end_col = new_position
+    def getPossibleMoves(self, board):
+        moves = []
 
-        if board.isPathClear(self.position, new_position) and (start_row == end_row or start_col == end_col):
-            return True
-        
-        return False
+        # Check in 4 directions until hit a piece
+        for direction in [(1,0), (-1,0), (0,1), (0,-1)]:
+            x, y = self.position
+
+            while True:
+                x += direction[0]
+                y += direction[1]
+                if not (0 <= x < 8 and 0 <= y < 8):
+                    break
+                if board.getPieceAt((x,y)):
+                    if board.getPieceAt((x,y)).colour != self.colour:
+                        moves.append((x,y)) # capture
+                    break
+                moves.append((x,y))
+        return moves
 
 
 class Knight(Piece):
@@ -97,20 +90,26 @@ class Knight(Piece):
         super().__init__(colour, position)
         self.symbol = 'N' if colour == Colour.WHITE else 'n'
 
-    def _isValidSpecific(self, new_position, board):
+    def getPossibleMoves(self, board):
       
-        start_row, start_col = self.position
-        end_row, end_col = new_position
+        moves = []
+        x, y = self.position
 
-        row_diff = abs(end_row - start_row)
-        col_diff = abs(end_col - start_col)
+        directions = [
+            (2, 1), (2, -1),
+            (-2, 1), (-2, -1),
+            (1, 2), (1, -2),
+            (-1, 2), (-1, -2)
+        ]
 
-        # Must move in L-shape
-        if (row_diff, col_diff) in [(2, 1), (1, 2)]:
-            return True
+        for dx, dy in directions:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                target = board.getPieceAt((new_x, new_y))
+                if target is None or target.colour != self.colour:
+                    moves.append((new_x, new_y))
 
-        return False
-
+        return moves
         
 
 class Bishop(Piece):
@@ -119,17 +118,24 @@ class Bishop(Piece):
         super().__init__(colour, position)
         self.symbol = 'B' if colour == Colour.WHITE else 'b'
 
-    def _isValidSpecific(self, new_position, board):
-        start_row, start_col = self.position
-        end_row, end_col = new_position
+    def getPossibleMoves(self, board):
+        moves = []
 
-        row_diff = abs(start_row - end_row)
-        col_diff = abs(start_col - end_col)
+        for direction in [(-1, -1), (1, 1), (-1, 1), (1, -1)]:
+            x, y = self.position
+            while True:
+                x += direction[0]
+                y += direction[1]
+                if not (0 <= x < 8 and 0 <= y < 8):
+                    break
+                if board.getPieceAt((x,y)):
+                    if board.getPieceAt((x,y)).colour != self.colour:
+                        moves.append((x,y)) # capture
+                    break
+                moves.append((x,y))
 
-        if board.isPathClear(self.position, new_position) and row_diff == col_diff:
-            return True
-        
-        return False
+        return moves
+
 
 class Queen(Piece):
     """Represents a Queen piece."""
@@ -137,19 +143,23 @@ class Queen(Piece):
         super().__init__(colour, position)
         self.symbol = 'Q' if colour == Colour.WHITE else 'q'
 
-    def _isValidSpecific(self, new_position, board):  
-        start_row, start_col = self.position
-        end_row, end_col = new_position
-
-        row_diff = abs(start_row - end_row)
-        col_diff = abs(start_col - end_col)
-
-        if board.isPathClear(self.position, new_position) and (
-            row_diff == col_diff or start_row == end_row or start_col == end_col
-            ):
-            return True
+    def getPossibleMoves(self, board):  
+        moves = []
         
-        return False
+        # Check in 4 directions until hit a piece
+        for direction in [(1,0), (-1,0), (0,1), (0,-1), (-1, -1), (1, 1), (-1, 1), (1, -1)]:
+            x, y = self.position
+            while True:
+                x += direction[0]
+                y += direction[1]
+                if not (0 <= x < 8 and 0 <= y < 8):
+                    break
+                if board.getPieceAt((x,y)):
+                    if board.getPieceAt((x,y)).colour != self.colour:
+                        moves.append((x,y)) # capture
+                    break
+                moves.append((x,y))
+        return moves
 
 class King(Piece):
     """Represents the King piece."""
@@ -157,11 +167,20 @@ class King(Piece):
         super().__init__(colour, position)
         self.symbol = 'K' if colour == Colour.WHITE else 'k'
 
-    def _isValidSpecific(self, new_position, board):
-        start_row, start_col = self.position
-        end_row, end_col = new_position
+    def getPossibleMoves(self, board):
+        moves = []
+        x, y = self.position
 
-        row_diff = abs(start_row - end_row)
-        col_diff = abs(start_col - end_col)
+        for dx, dy in [
+            (1,0), (1,1), (0,1), (-1,0),
+            (-1,-1), (0,-1), (1,-1), (-1,1)
+        ]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < 8 and 0 <= ny < 8:
+                target = board.getPieceAt((nx, ny))
+                if target is None or target.colour != self.colour:
+                    moves.append((nx, ny))
 
-        return max(row_diff, col_diff) == 1
+        # TODO: castling
+
+        return moves
