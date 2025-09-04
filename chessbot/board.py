@@ -7,6 +7,7 @@ class Board:
         self.spaces = self._create_initial_board()
         self.captured = []
         self.turn = Colour.WHITE
+        self.enpassant_target = None
 
     def _create_initial_board(self):
         """
@@ -107,7 +108,7 @@ class Board:
             
         return True
     
-    def getPieceAt(self, position: tuple):
+    def getPieceAt(self, position: tuple)-> Piece:
         x, y = position
         return self.spaces[x][y]
     
@@ -179,6 +180,47 @@ class Board:
         self.spaces[start_pos[0]][start_pos[1]] = None
         self.spaces[end_pos[0]][end_pos[1]] = piece_to_move
         piece_to_move.position = end_pos
+
+
+        if isinstance(piece_to_move, Pawn):
+            start_x, start_y = start_pos
+            end_x, end_y = end_pos
+
+            # Check for en passant capture
+            if (end_x, end_y) == self.enpassant_target:
+                # Captured pawn is behind the target square
+                captured_pawn = self.getPieceAt((start_x, end_y))
+                if captured_pawn:
+                    self.captured.append(captured_pawn)
+                    self.spaces[start_x][end_y] = None
+
+            if switch_turn:
+                self.enpassant_target = None
+
+            if abs(end_x - start_x) == 2:
+                # Set en passant square (the one skipped over)
+                skipped_row = (start_x + end_x) // 2
+                self.enpassant_target = (skipped_row, start_y)
+
+
+
+        # Handle castling
+        if isinstance(piece_to_move, King) and abs(end_pos[1] - start_pos[1]) == 2:
+            if end_pos[1] > start_pos[1]:  # kingside
+                rook = self.getPieceAt((end_pos[0], 7))
+                self.spaces[end_pos[0]][7] = None
+                self.spaces[end_pos[0]][end_pos[1] - 1] = rook
+                rook.position = (end_pos[0], end_pos[1] - 1)
+            else:  # queenside
+                rook = self.getPieceAt((end_pos[0], 0))
+                self.spaces[end_pos[0]][0] = None
+                self.spaces[end_pos[0]][end_pos[1] + 1] = rook
+                rook.position = (end_pos[0], end_pos[1] + 1)
+
+        # Update has_moved
+        if hasattr(piece_to_move, "has_moved"):
+            piece_to_move.has_moved = True
+
 
         # Switch turns
         if switch_turn:

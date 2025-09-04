@@ -53,7 +53,10 @@ class Pawn(Piece):
                 if target and target.colour != self.colour:
                     moves.append((new_x, new_y))
                 
-        # TODO: Implement en passant here
+        for dy in [-1, 1]:
+            new_x, new_y = x + direction, y + dy
+            if (new_x, new_y) == board.enpassant_target:
+                moves.append((new_x, new_y))
 
         return moves
 
@@ -63,6 +66,7 @@ class Rook(Piece):
     def __init__(self, colour, position):
         super().__init__(colour, position)
         self.symbol = 'R' if colour == Colour.WHITE else 'r'
+        self.has_moved = False
 
     def getPossibleMoves(self, board):
         moves = []
@@ -89,8 +93,6 @@ class Knight(Piece):
     def __init__(self, colour, position):
         super().__init__(colour, position)
         self.symbol = 'N' if colour == Colour.WHITE else 'n'
-        self.has_moved = False
-
 
     def getPossibleMoves(self, board):
       
@@ -185,10 +187,10 @@ class King(Piece):
                 if target is None or target.colour != self.colour:
                     moves.append((nx, ny))
 
-        if not self.hasMoved:
+        if not self.has_moved:
             for ry in [0, 7]:  # rook files
                 rook = board.getPieceAt((x, ry))
-                if isinstance(rook, Rook) and not rook.hasMoved:
+                if isinstance(rook, Rook) and not rook.has_moved:
                     if board.isPathClear(self.position, (x, ry)):
                         step = -1 if ry == 0 else 1
                         path = [(x, y), (x, y + step), (x, y + 2*step)]
