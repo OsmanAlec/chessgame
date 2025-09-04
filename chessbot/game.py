@@ -12,7 +12,6 @@ class GameManager(object):
 
         print("Welcome to the game of chess")
         while not self.isCheckMate():
-            self.board.printWithNotation()
             print(f"{self.board.turn}'s turn.")
             start_pos, end_pos = self.getInput()
             self.board.movePiece(start_pos, end_pos, True)
@@ -28,7 +27,7 @@ class GameManager(object):
                 if piece and piece.colour == colour:
                     if self.board.getLegalMoves(piece):
                         return False
-        return True  # in check, and no moves
+        return True
 
 
     def getInput(self):
@@ -55,7 +54,3 @@ class GameManager(object):
 
         return start_pos, end_pos
 
-
-
-game_manager = GameManager()
-game_manager.startGame()
