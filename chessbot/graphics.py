@@ -6,7 +6,7 @@ TILE_SIZE = 80
 BOARD_SIZE = TILE_SIZE * 8
 
 pygame.init()
-screen = pygame.display.set_mode((BOARD_SIZE, BOARD_SIZE))
+SCREEN = pygame.display.set_mode((BOARD_SIZE, BOARD_SIZE))
 pygame.display.set_caption("Chess")
 
 piece_images = {
@@ -24,56 +24,64 @@ piece_images = {
     "q": pygame.image.load("assets/black_queen.png"),
 }
 
-def draw_board(screen, board, selected):
+def draw_board(board, selected):
     colors = [(240, 217, 181), (181, 136, 99)]  # light/dark squares
     for row in range(8):
         for col in range(8):
             color = colors[(row + col) % 2]
             rect = pygame.Rect(col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            pygame.draw.rect(screen, color, rect)
+            pygame.draw.rect(SCREEN, color, rect)
 
             # Highlight selected square
             if selected == (row, col):
-                pygame.draw.rect(screen, (0, 255, 0), rect, 3)
+                pygame.draw.rect(SCREEN, (255, 255, 255), rect, 3)
 
             piece = board.getPieceAt((row, col))
             if piece:
                 piece_img = piece_images[str(piece)]
                 piece_rect = piece_img.get_rect(center = rect.center)
-                screen.blit(piece_img, piece_rect)
+                SCREEN.blit(piece_img, piece_rect)
+
+def play_game():
+    game = GameManager() 
+    clock = pygame.time.Clock()
+    selected_square = None
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                row, col = y // TILE_SIZE, x // TILE_SIZE
+
+                if selected_square is None:
+                    # First click: select a piece
+                    piece = game.board.getPieceAt((row, col))
+                    if piece and piece.colour == game.board.turn:
+                        selected_square = (row, col)
+                else:
+                    # Second click: try to move
+                    start_pos = selected_square
+                    end_pos = (row, col)
+                    game.board.movePiece(start_pos, end_pos, switch_turn=True)
+                    selected_square = None
+
+        # --- Drawing ---
+        draw_board(game.board, selected_square)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+def main_menu():
+    while True:
+        SCREEN.blit(BG, (0, 0))
 
 
+        pygame.display.update()
 
-game = GameManager()  # this has .board inside
-clock = pygame.time.Clock()
-selected_square = None  # track clicks
-
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            row, col = y // TILE_SIZE, x // TILE_SIZE
-
-            if selected_square is None:
-                # First click: select a piece
-                piece = game.board.getPieceAt((row, col))
-                if piece and piece.colour == game.board.turn:
-                    selected_square = (row, col)
-            else:
-                # Second click: try to move
-                start_pos = selected_square
-                end_pos = (row, col)
-                game.board.movePiece(start_pos, end_pos, switch_turn=True)
-                selected_square = None
-
-    # --- Drawing ---
-    draw_board(screen, game.board, selected_square)
-
-    pygame.display.flip()
-    clock.tick(60)
+main_menu()
 
 pygame.quit()

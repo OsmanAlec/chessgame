@@ -11,10 +11,16 @@ class GameManager(object):
         """Contains the main game loop."""
 
         print("Welcome to the game of chess")
-        while not self.isCheckMate():
+        while not self.isCheckMate() and not self.isStaleMate():
             print(f"{self.board.turn}'s turn.")
             start_pos, end_pos = self.getInput()
             self.board.movePiece(start_pos, end_pos, True)
+        
+        if self.isStaleMate():
+            print(f"It's stalemate!")
+        elif self.isCheckMate():
+            print(f"{self.board.turn} has lost")
+        
 
     def isCheckMate(self):
         colour = self.board.turn
@@ -22,6 +28,19 @@ class GameManager(object):
             return False
         
         # If king is in check, see if ANY legal move exists
+        for row in self.board.spaces:
+            for piece in row:
+                if piece and piece.colour == colour:
+                    if self.board.getLegalMoves(piece):
+                        return False
+        return True
+    
+    def isStaleMate(self):
+        colour = self.board.turn
+        if self.board.isKingInCheck(colour):
+            return False
+        
+        # If king is in not check, see if ANY legal move exists
         for row in self.board.spaces:
             for piece in row:
                 if piece and piece.colour == colour:
