@@ -30,6 +30,18 @@ class Pawn(Piece):
         super().__init__(colour, position)
         self.symbol = 'P' if colour == Colour.WHITE else 'p'
 
+
+    def getAttackSquares(self):
+        attacks = []
+        x, y = self.position
+        direction = -1 if self.colour == "white" else 1
+
+        for dy in [-1, 1]:
+            new_x, new_y = x + direction, y + dy
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                attacks.append((new_x, new_y))
+        return attacks
+
     def getPossibleMoves(self, board):
         moves = []
         
@@ -187,16 +199,24 @@ class King(Piece):
                 if target is None or target.colour != self.colour:
                     moves.append((nx, ny))
 
+        # Assume (row, col) where row = rank, col = file
         if not self.has_moved:
-            for ry in [0, 7]:  # rook files
-                rook = board.getPieceAt((x, ry))
-                if isinstance(rook, Rook) and not rook.has_moved:
-                    if board.isPathClear(self.position, (x, ry)):
-                        step = -1 if ry == 0 else 1
-                        path = [(x, y), (x, y + step), (x, y + 2*step)]
-                        # king must not be in check at current, intermediate, final squares
-                        if all(not board.squareAttackedByOpponent(pos, self.colour) for pos in path):
-                            moves.append((x, y + 2*step))
+            row, col = self.position
+            
+            # Kingside castling
+            rook = board.getPieceAt((row, 7))
+            if isinstance(rook, Rook) and not rook.has_moved:
+                if all(board.getPieceAt((row, c)) is None for c in [5, 6]):
+                    if all(not board.squareAttackedByOpponent((row, c), self.colour) for c in [4, 5, 6]):
+                        moves.append((row, 6))
+
+            # Queenside castling
+            rook = board.getPieceAt((row, 0))
+            if isinstance(rook, Rook) and not rook.has_moved:
+                if all(board.getPieceAt((row, c)) is None for c in [1, 2, 3]):
+                    if all(not board.squareAttackedByOpponent((row, c), self.colour) for c in [2, 3, 4]):
+                        moves.append((row, 2))
+
 
 
         return moves

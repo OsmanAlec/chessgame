@@ -1,6 +1,7 @@
-import pygame
+import pygame, sys
 from pygame.locals import *
 from game import GameManager
+from button import Button
 
 TILE_SIZE = 80
 BOARD_SIZE = TILE_SIZE * 8
@@ -42,46 +43,90 @@ def draw_board(board, selected):
                 piece_rect = piece_img.get_rect(center = rect.center)
                 SCREEN.blit(piece_img, piece_rect)
 
-def play_game():
-    game = GameManager() 
+
+def main():
     clock = pygame.time.Clock()
+    game = GameManager()
+    state = "menu"  # can be "menu", "game", "options", "quit"
     selected_square = None
 
-    running = True
-    while running:
+    
+    PLAY_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 250), 
+                        text_input="PLAY", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
+    OPTIONS_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 400), 
+                        text_input="OPTIONS", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
+    QUIT_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 550), 
+                        text_input="QUIT", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
+    MENU_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 400), 
+                        text_input="GO TO MAIN MENU", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
+
+    while state != "quit":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                state = "quit"
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = event.pos
-                row, col = y // TILE_SIZE, x // TILE_SIZE
+            # --- Menu state ---
+            if state == "menu":
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    if PLAY_BUTTON.checkForInput(mouse_pos):
+                        state = "game"
+                    elif OPTIONS_BUTTON.checkForInput(mouse_pos):
+                        state = "options"
+                    elif QUIT_BUTTON.checkForInput(mouse_pos):
+                        state = "quit"
+                        
+            # --- Game state ---
+            elif state == "game":
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = event.pos
+                    row, col = y // TILE_SIZE, x // TILE_SIZE
+                    if selected_square is None:
+                        piece = game.board.getPieceAt((row, col))
+                        if piece and piece.colour == game.board.turn:
+                            selected_square = (row, col)
+                    else:
+                        start_pos = selected_square
+                        end_pos = (row, col)
+                        game.board.movePiece(start_pos, end_pos, switch_turn=True)
+                        selected_square = None
+                
+                if game.isCheckMate():
+                    state = "checkmate"
+                if game.isStaleMate():
+                    state = "stalemate"
 
-                if selected_square is None:
-                    # First click: select a piece
-                    piece = game.board.getPieceAt((row, col))
-                    if piece and piece.colour == game.board.turn:
-                        selected_square = (row, col)
-                else:
-                    # Second click: try to move
-                    start_pos = selected_square
-                    end_pos = (row, col)
-                    game.board.movePiece(start_pos, end_pos, switch_turn=True)
-                    selected_square = None
+            if state == "checkmate":
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    if MENU_BUTTON.checkForInput(mouse_pos):
+                        state = "menu"
+            
 
-        # --- Drawing ---
-        draw_board(game.board, selected_square)
+        if state == "menu":
+            SCREEN.fill('black')
+
+            mouse_pos = pygame.mouse.get_pos()
+
+            MENU_TEXT = pygame.font.SysFont('MS Sans Serif Regular', 30).render("MAIN MENU", True, "#b68f40")
+            MENU_RECT = MENU_TEXT.get_rect(center=(BOARD_SIZE / 2, 100))
+
+            SCREEN.blit(MENU_TEXT, MENU_RECT)
+
+            for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
+                button.changeColor(mouse_pos)
+                button.update(SCREEN)
+
+            pygame.display.update()
+
+        elif state == "game":
+            draw_board(game.board, selected_square)
 
         pygame.display.flip()
         clock.tick(60)
 
-def main_menu():
-    while True:
-        SCREEN.blit(BG, (0, 0))
+    pygame.quit()
+    sys.exit()
 
 
-        pygame.display.update()
-
-main_menu()
-
-pygame.quit()
+main()

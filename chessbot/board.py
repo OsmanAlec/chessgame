@@ -132,9 +132,14 @@ class Board:
         for row in self.spaces:
             for piece in row:
                 if piece and piece.colour != colour:
-                    if position in piece.getPossibleMoves(self):
-                        return True
+                    if isinstance(piece, Pawn):
+                        if position in piece.getAttackSquares():
+                            return True
+                    else:
+                        if position in piece.getPossibleMoves(self):
+                            return True
         return False
+
 
 
     def getLegalMoves(self, piece):
