@@ -7,21 +7,13 @@ class GameManager(object):
     def __init__(self):
         self.board = Board()
     
-    def startGame(self):
-        """Contains the main game loop."""
+    def restartBoard(self):
+        """Restarts the board"""
 
-        print("Welcome to the game of chess")
-        while not self.isCheckMate() and not self.isStaleMate():
-            print(f"{self.board.turn}'s turn.")
-            start_pos, end_pos = self.getInput()
-            self.board.movePiece(start_pos, end_pos, True)
-        
-        if self.isStaleMate():
-            print(f"It's stalemate!")
-        elif self.isCheckMate():
-            print(f"{self.board.turn} has lost")
-        
+        self.board = Board ()
 
+        
+    
     def isCheckMate(self):
         colour = self.board.turn
         if not self.board.isKingInCheck(colour):

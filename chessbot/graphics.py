@@ -57,7 +57,7 @@ def main():
                         text_input="OPTIONS", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
     QUIT_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 550), 
                         text_input="QUIT", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
-    MENU_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 400), 
+    MENU_BUTTON = Button(image=pygame.Surface((150, 50)), pos=(320, 500), 
                         text_input="GO TO MAIN MENU", font=pygame.font.SysFont('MS Sans Serif Regular', 30), base_color="#d7fcd4", hovering_color="White")
 
     while state != "quit":
@@ -96,14 +96,53 @@ def main():
                 if game.isStaleMate():
                     state = "stalemate"
 
-            if state == "checkmate":
+            if state == "checkmate" or state == "stalemate":
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
                     if MENU_BUTTON.checkForInput(mouse_pos):
                         state = "menu"
+                        game.restartBoard()
+
+        if state == "checkmate":
+            # Semi-transparent overlay
+            overlay = pygame.Surface((BOARD_SIZE, BOARD_SIZE))
+            overlay.fill("black")
+            overlay.set_alpha(180)  # transparency
+            SCREEN.blit(overlay, (0, 0))
+
+            # Fonts
+            title_font = pygame.font.SysFont("MS Sans Serif Regular", 50, bold=True)
+            subtitle_font = pygame.font.SysFont("MS Sans Serif Regular", 30)
+
+            # Texts
+            title_text = title_font.render("Checkmate!", True, (255, 215, 0))  # gold color
+            subtitle_text = subtitle_font.render(f"{game.board.turn} lost.", True, (255, 255, 255))
+
+            # Rects (centered)
+            title_rect = title_text.get_rect(center=(BOARD_SIZE / 2, 240))
+            subtitle_rect = subtitle_text.get_rect(center=(BOARD_SIZE / 2, 280))
+
+            # Background box behind texts & button
+            box_width, box_height = 400, 250
+            box_rect = pygame.Rect(0, 0, box_width, box_height)
+            box_rect.center = (BOARD_SIZE / 2, BOARD_SIZE / 2)
+            pygame.draw.rect(SCREEN, (40, 40, 40), box_rect, border_radius=20)
+            pygame.draw.rect(SCREEN, (200, 200, 200), box_rect, width=3, border_radius=20)
+
+            # Draw texts
+            SCREEN.blit(title_text, title_rect)
+            SCREEN.blit(subtitle_text, subtitle_rect)
+
+            # Menu button centered below text
+            MENU_BUTTON.rect.center = (BOARD_SIZE / 2, 340)
+            MENU_BUTTON.changeColor(mouse_pos)
+            MENU_BUTTON.update(SCREEN)
+
+            pygame.display.update()
+
             
 
-        if state == "menu":
+        elif state == "menu":
             SCREEN.fill('black')
 
             mouse_pos = pygame.mouse.get_pos()
