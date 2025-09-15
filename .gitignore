@@ -1,0 +1,3 @@
+datawork/chess_dataset.lmdb
+datawork/chess_shards
+datawork/games.pgn.zst
