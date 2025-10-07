@@ -1,5 +1,7 @@
 from pieces import *
 from board import *
+from model import ChessAI
+from copy import deepcopy, copy
 
 class GameManager(object):
     """Game logic, checking for checkmates is centralised here.
@@ -11,8 +13,6 @@ class GameManager(object):
         """Restarts the board"""
 
         self.board = Board ()
-
-        
     
     def isCheckMate(self):
         colour = self.board.turn
@@ -64,4 +64,27 @@ class GameManager(object):
             return self.getInput()
 
         return start_pos, end_pos
+    
+    def findOptimalMove(self):
+        """Generates legal moves, feeds them into an AI, and checks which one is optimal."""
+        ai = ChessAI("model.pth")
+
+        best_score = float("-inf")
+        best_move = None
+
+        # get all moves
+        for move in self.board.getLegalMoves():
+            temp_board = copy.deepcopy(self.board)
+            temp_board.movePiece(move)
+
+            # evaluate
+            score = ai.evaluateMove(temp_board)
+            if score > best_score:
+                best_score = score
+                best_move = move
+
+        return best_move
+
+
+
 

@@ -1,5 +1,4 @@
 from pieces import Colour, Piece, Pawn, Rook, Knight, Bishop, Queen, King 
-from copy import deepcopy
 
 class Board:
     def __init__(self):
@@ -8,6 +7,8 @@ class Board:
         self.captured = []
         self.turn = Colour.WHITE
         self.enpassant_target = None
+
+
 
     def _create_initial_board(self):
         """
